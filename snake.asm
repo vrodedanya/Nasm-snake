@@ -282,15 +282,6 @@ move_snake:
 	move_exit:
 ret
 
-random:
-	pop bp
-	mov al, 5
-	mov bl, word[next]
-	mul bl
-	mov bl, 32001
-	push bp
-ret
-
 next dw 1
 
 snake_str dw 3,1, 2,1, 1,1, -1,-1
