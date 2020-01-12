@@ -1,5 +1,5 @@
 # Nasm-snake
-Game wrote in NASM for 16-bit computers
+Game wrote in NASM for dosbox
 ### Running the game
 1. Install dosbox
 2. Edit dosbox congif and mount directory, where you're gonna install "snake.com"
