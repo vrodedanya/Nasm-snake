@@ -4,12 +4,16 @@ mov ah, 0x0
 mov al, 0x10
 int 0x10 ; enable graphic mode
 
+mov ah, 0x0
+int 0x1a
+mov byte[next],dl
+
+call input_apple
 for:
 	call move_snake
-	call input_snake
 	push 0 ; counts
 	push 1 ; color
-	push 20 ; length 
+	push 18 ; length 
 	push 0 ; x
 	push 0 ; y
 	call draw_matrix
@@ -21,6 +25,8 @@ end:
 mov ah, 0x0
 mov al, 0x3
 int 0x10 ; enable text mode
+
+push 0
 ret
 
 event_handler:
@@ -99,21 +105,27 @@ draw_matrix: ; color, length, x, y
 		jnz clr_check_2
 			inc word[bp] ; if 0 - next line
 			mov ax, word[bp + 8]
+			inc ax
 			add word[bp + 4], ax
 			mov word[bp + 6], 0
 			jmp matrix_i
-		clr_check_2: ; if another number - green
+		clr_check_2: ; if 2 - green
 		cmp byte[bx], 2
 		jnz clr_check_3
 			mov word[bp + 10], 2
 			jmp skip
-		clr_check_3:
+		clr_check_3: ; if 3 - black
 		cmp byte[bx], 3
 		jnz clr_check_4
 			mov word[bp + 10], 0
 			jmp skip
 		clr_check_4:
-			mov word[bp + 10],4
+		cmp byte[bx], 4
+		jnz clr_check_5
+			mov word[bp + 10], 4
+			jmp skip
+		clr_check_5:
+			mov word[bp + 10], 5
 		skip:
 		push word[bp + 10]
 		push word[bp + 8]
@@ -125,17 +137,18 @@ draw_matrix: ; color, length, x, y
 		
 		inc word[bp + 12] ; increment counter
 		mov ax, word[bp + 8] 
+		inc ax
 		add word[bp + 6], ax ; move OX
 		inc word[bp]
 		inc word[bp + 10]
-	cmp word[bp + 12], 64
+	cmp word[bp + 12], 81
 	jnz matrix_i
 	add sp, 2
 ret
 
 change_place: ; new_value, x, y
 	pop bp
-	mov di, 9 ;length
+	mov di, 10 ;length
 	pop cx
 	pop si
 	pop ax
@@ -145,6 +158,22 @@ change_place: ; new_value, x, y
 	mov bx, matrix
 	mov byte[bx + si], al
 	push bp
+ret
+
+check_place: ; x,y
+pop bp
+	mov di, 10
+	pop cx
+	pop si
+
+	check_i:
+		add si, di
+	loop check_i
+	mov bx, matrix
+	mov dl, byte[bx + si]
+	xor dh,dh
+	push dx
+push bp
 ret
 
 input_snake:
@@ -166,6 +195,72 @@ input_snake:
 	add sp, 2
 ret
 
+input_apple:
+	input_apple_repeat:
+	call random
+	pop ax
+	mov bl, 7
+	div bl
+	inc ah
+	mov al,ah
+	xor ah,ah
+	mov si,ax
+	call random
+	pop ax
+	mov bl, 7
+	div bl
+	inc ah
+	mov al,ah
+	xor ah,ah
+	mov di,ax
+
+	push si
+	push di
+
+	push si
+	push di
+	call check_place
+	pop ax
+	pop si
+	pop di
+	cmp ax, 2
+	jz input_apple_repeat
+	push 4
+	push si
+	push di
+	call change_place
+ret
+
+add_new:
+	mov bx, snake_str
+	mov cx, 49
+	check_not_added:
+	cmp word[bx],-1
+	jz exit
+	add bx, 4
+	loop check_not_added
+	exit:
+	mov si, word[bx - 4]
+	mov di, word[bx - 2]
+	mov word[bx], si
+	mov word[bx + 2], di
+	mov byte[apple], 1
+ret
+
+check_barrier: ; x, y
+	mov bp, sp
+	push word[bp + 4]
+	push word[bp + 2]
+	call check_place
+	pop cx
+	cmp cx, 4
+	jnz not_apple
+	call add_new
+	not_apple:
+	cmp cx, 2
+	jz end
+ret
+
 move_snake:
 	mov si, word[snake_str]
 	add si, word[way]
@@ -179,12 +274,16 @@ move_snake:
 		push word[snake_str + 2]
 		call change_place
 		popa
-		mov word[snake_str],6
+		push 7
+		push word[snake_str + 2]
+		call check_barrier
+		add sp,4
+		mov word[snake_str],7
 		jmp move_next
 	move_check_1:
 	mov si, word[snake_str]
 	add si, word[way]
-	cmp si, 7
+	cmp si, 8
 	jnz move_check_2
 		mov ax, word[snake_str]
 		mov bx, word[snake_str + 2]
@@ -194,6 +293,12 @@ move_snake:
 		push word[snake_str + 2]
 		call change_place
 		popa
+
+		push 1
+		push word[snake_str + 2]
+		call check_barrier
+		add sp,4
+
 		mov word[snake_str],1
 		jmp move_next
 	move_check_2:
@@ -209,13 +314,18 @@ move_snake:
 		push word[snake_str + 2]
 		call change_place
 		popa
-		mov word[snake_str + 2], 6
+
+		push word[snake_str]
+		push 7
+		call check_barrier
+		add sp,4
+		mov word[snake_str + 2], 7
 
 		jmp move_next
 	move_check_3:
 	mov si, word[snake_str + 2]
 	add si, word[way + 2]
-	cmp si, 7
+	cmp si, 8
 	jnz move_skip
 		mov ax, word[snake_str]
 		mov bx, word[snake_str + 2]
@@ -225,13 +335,17 @@ move_snake:
 		push word[snake_str + 2]
 		call change_place
 		popa
+		
+		push word[snake_str]
+		push 1
+		call check_barrier
+		add sp,4
 		mov word[snake_str + 2], 1
 
 		jmp move_next
 	move_skip:
 
-	mov ax, word[snake_str]
-	mov bx, word[snake_str + 2]
+	
 	
 	pusha
 	push 3
@@ -239,7 +353,30 @@ move_snake:
 	push word[snake_str + 2]
 	call change_place
 	popa
+	
+	mov di,word[way + 2]
+	mov si,word[way]
+	cmp di,0
+	jnz not_zero
+	cmp si,0
+	jz move_exit
 
+	not_zero:
+
+	mov dx, word[way]
+	mov si, word[snake_str]
+	add si, dx
+	push si
+	mov si, word[snake_str + 2]
+	mov dx,word[way + 2]
+	add si, dx
+	push si
+	call check_barrier
+	add sp,4
+
+	mov ax, word[snake_str]
+	mov bx, word[snake_str + 2]
+	
 	mov dx, word[way] ; move first body
 	add word[snake_str], dx
 	mov dx, word[way + 2]
@@ -280,10 +417,33 @@ move_snake:
 		add si, 8
 	jmp move_i
 	move_exit:
+	call input_snake
+	cmp byte[apple], 1
+	jnz nap
+		call input_apple
+		mov byte[apple], 0
+	nap:
 ret
 
-next dw 1
+random:
+pop bp
+	mov al, byte[next]
+	mov bl, 9
+	mul bl
+	add ax, 3
+	mov bl, 128
+	div bl
+	mov byte[next],ah
+	xor dx, dx
+	mov dl, ah
+	push dx
+push bp
+ret
 
-snake_str dw 3,1, 2,1, 1,1, -1,-1
+next db 3
+
+apple db 0
+
+snake_str dw 3,1, 2,1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1 , -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1 ,-1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1, -1,-1
 way dw 0,0
-matrix db 1,1,1,1,1,1,1,1,0, 1,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,1,0, 1,1,1,1,1,1,1,1,0,
+matrix db 1,1,1,1,1,1,1,1,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,3,3,3,3,3,3,3,1,0, 1,1,1,1,1,1,1,1,1,0,
