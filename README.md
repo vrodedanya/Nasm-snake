@@ -4,7 +4,7 @@ Game wrote in NASM for dosbox
 1. Install dosbox
 2. Edit dosbox congfiguration file:<br>
 ![Dosbox configuration](https://github.com/vrodedanya/Nasm-snake/blob/master/pictures/screen.png)<br>
-mount c "your path" <br>
+mount c "path to the snake.com" <br>
 c:
 
 3. Upload files from the repository:
