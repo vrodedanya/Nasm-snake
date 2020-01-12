@@ -8,6 +8,7 @@ mov ah, 0x0
 int 0x1a
 mov byte[next],dl
 
+call input_snake
 call input_apple
 for:
 	call move_snake
@@ -221,8 +222,8 @@ input_apple:
 	push di
 	call check_place
 	pop ax
-	pop si
 	pop di
+	pop si
 	cmp ax, 2
 	jz input_apple_repeat
 	push 4
