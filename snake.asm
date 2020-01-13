@@ -266,40 +266,26 @@ move_snake:
 	mov si, word[snake_str]
 	add si, word[way]
 	cmp si, 0
+	mov ax, word[snake_str]
+	mov bx, word[snake_str + 2]
 	jnz move_check_1
-		mov ax, word[snake_str]
-		mov bx, word[snake_str + 2]
 		pusha
-		push 3
-		push word[snake_str]
-		push word[snake_str + 2]
-		call change_place
-		popa
 		push 7
 		push word[snake_str + 2]
 		call check_barrier
 		add sp,4
+		popa
 		mov word[snake_str],7
 		jmp move_next
 	move_check_1:
-	mov si, word[snake_str]
-	add si, word[way]
 	cmp si, 8
 	jnz move_check_2
-		mov ax, word[snake_str]
-		mov bx, word[snake_str + 2]
 		pusha
-		push 3
-		push word[snake_str]
-		push word[snake_str + 2]
-		call change_place
-		popa
-
 		push 1
 		push word[snake_str + 2]
 		call check_barrier
 		add sp,4
-
+		popa
 		mov word[snake_str],1
 		jmp move_next
 	move_check_2:
@@ -307,58 +293,31 @@ move_snake:
 	add si, word[way + 2]
 	cmp si, 0
 	jnz move_check_3
-		mov ax, word[snake_str]
-		mov bx, word[snake_str + 2]
 		pusha
-		push 3
-		push word[snake_str]
-		push word[snake_str + 2]
-		call change_place
-		popa
-
 		push word[snake_str]
 		push 7
 		call check_barrier
 		add sp,4
+		popa
 		mov word[snake_str + 2], 7
-
 		jmp move_next
 	move_check_3:
-	mov si, word[snake_str + 2]
-	add si, word[way + 2]
 	cmp si, 8
 	jnz move_skip
-		mov ax, word[snake_str]
-		mov bx, word[snake_str + 2]
 		pusha
-		push 3
-		push word[snake_str]
-		push word[snake_str + 2]
-		call change_place
-		popa
-		
 		push word[snake_str]
 		push 1
 		call check_barrier
 		add sp,4
+		popa
 		mov word[snake_str + 2], 1
-
 		jmp move_next
 	move_skip:
-
 	
-	
-	pusha
-	push 3
-	push word[snake_str]
-	push word[snake_str + 2]
-	call change_place
-	popa
-	
-	mov di,word[way + 2]
-	mov si,word[way]
-	cmp di,0
+	mov si,word[way + 2]
+	cmp si,0
 	jnz not_zero
+	mov si, word[way]
 	cmp si,0
 	jz move_exit
 
@@ -369,7 +328,7 @@ move_snake:
 	add si, dx
 	push si
 	mov si, word[snake_str + 2]
-	mov dx,word[way + 2]
+	mov dx, word[way + 2]
 	add si, dx
 	push si
 	call check_barrier
