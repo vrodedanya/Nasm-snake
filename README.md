@@ -1,5 +1,5 @@
 # Nasm-snake
-Game wrote in NASM for dosbox
+Game is written in NASM for dosbox
 ### Running the game
 1. Install dosbox
 2. Edit dosbox congfiguration file:<br>
